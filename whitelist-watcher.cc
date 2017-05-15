@@ -53,15 +53,12 @@ std::string getPlayerName(const std::string &line) {
 int main() {
     std::string filename = "/tmp/test.txt";
 
+    // Load the whitelisted players
     std::vector<std::string> whitelist;
     loadPlayersWhitelisted("/tmp/whitelist.txt", whitelist);
 
-    for (auto player: whitelist) {
-        std::cout << player << std::endl;
-    }
-
-    std::cout << "End" << std::endl;
-
+    // Open the file log
+    // TODO: test with a ifstream
     int fd = open(filename.c_str(), O_RDONLY);
     if (fd < 0) {
         perror("Error open()");
@@ -70,9 +67,9 @@ int main() {
 
     char c;
     std::string line;
-    std::size_t numRead = 0;
 
     for (;;) {
+        // Read char by char
         c = '\0';
         ssize_t n = read(fd, &c, sizeof(char));
         if (n < 0) {
@@ -84,6 +81,7 @@ int main() {
         }
         line.push_back(c);
 
+        // If it's a end of new line
         if (c == '\n') {
             // Remove the newline char
             line.pop_back();
