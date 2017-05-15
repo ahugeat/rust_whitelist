@@ -1,6 +1,5 @@
-#include <iostream>
-
 #include "local/FileMonitor.h"
+#include "local/RCon.h"
 
 int main() {
     // Monitoring the log file
@@ -9,7 +8,7 @@ int main() {
     for (;;) {
         auto steamIDs = logMonitor.getUnknowSteamIDs();
         for (auto steamID: steamIDs) {
-            std::cout << steamID << std::endl;
+            RCon::kickSteamID(steamID);
         }
     }
 
