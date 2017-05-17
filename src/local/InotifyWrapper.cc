@@ -52,3 +52,7 @@ std::vector<InotifyEvent> InotifyWrapper::getEvents() const {
 
     return events;
 }
+
+int InotifyWrapper::getFileDescriptor() const {
+    return m_inotifyFileDescriptor;
+}

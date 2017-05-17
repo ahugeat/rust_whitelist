@@ -20,6 +20,7 @@ public:
     virtual ~InotifyWrapper();
 
     std::vector<InotifyEvent> getEvents() const;
+    int getFileDescriptor() const;
 
 private:
     std::string m_filename;
