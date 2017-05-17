@@ -4,10 +4,11 @@
 #include <string>
 #include <vector>
 
+#include "InotifyWrapper.h"
+
 class FileMonitor {
 public:
     FileMonitor(const std::string &filename, const std::string &whitelist);
-    virtual ~FileMonitor();
 
     std::vector<std::string> getUnknowSteamIDs();
 
@@ -17,8 +18,9 @@ private:
     void loadSteamIDsWhitelisted(const std::string &filename);
 
 private:
-    int m_fd;
-    int m_wd;
+    // int m_fd;
+    // int m_wd;
+    InotifyWrapper m_logWatcher;
     std::string m_filename;
     std::size_t m_logFileIndex;
     std::vector<std::string> m_whitelist;

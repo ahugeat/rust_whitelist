@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS                 "-Wall -Wextra -std=c++11 -O2")
 add_executable(whitelist_watcher
     src/whitelist-watcher.cc
     src/local/FileMonitor.cc
+    src/local/InotifyWrapper.cc
 	src/local/RCon.cc
 )
 

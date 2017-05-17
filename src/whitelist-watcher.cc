@@ -1,14 +1,17 @@
 #include "local/FileMonitor.h"
 #include "local/RCon.h"
 
+#include <iostream>
+
 int main() {
     // Monitoring the log file
-    FileMonitor logMonitor("/tmp/test.txt", "/tmp/whitelist.txt");
+    FileMonitor logMonitor("test.log", "/tmp/whitelist.txt");
 
     for (;;) {
         auto steamIDs = logMonitor.getUnknowSteamIDs();
         for (auto steamID: steamIDs) {
-            RCon::kickSteamID(steamID);
+            std::cout << steamID << std::endl;
+            // RCon::kickSteamID(steamID);
         }
     }
 
