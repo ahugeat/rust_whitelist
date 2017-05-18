@@ -1,5 +1,6 @@
 #include "FileMonitor.h"
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iostream>
@@ -111,15 +112,30 @@ bool FileMonitor::steamIDisWhitelisted(const std::string &steamID) const {
 void FileMonitor::loadSteamIDsWhitelisted(const std::string &filename) {
     std::cout << "FileMonitor::loadSteamIDsWhitelisted()" << std::endl;
 
+    // Try to open the whitelist file
     std::ifstream file(filename);
-
     if (file.fail()) {
         return;
     }
 
+    // Read line by line the whitelisted steamID
     while (!file.eof()) {
         std::string steamID;
         file >> steamID;
-        m_whitelist.push_back(steamID);
+
+        // To avoid to add a empty string when eof is reached
+        if (steamID != "") {
+            m_whitelist.push_back(steamID);
+        }
     }
+
+    // Remove duplicate steamID
+    std::sort(m_whitelist.begin(), m_whitelist.end());
+    m_whitelist.erase(std::unique(m_whitelist.begin(), m_whitelist.end()), m_whitelist.end());
+
+    for (std::string steamID: m_whitelist) {
+        std::cout << steamID << std::endl;
+    }
+
+    std::cout << "m_whitelist.size() = " << m_whitelist.size() << std::endl;
 }
