@@ -9,55 +9,56 @@
 
 #include "RCon.h"
 
-FileMonitor::FileMonitor(const std::string &logFilename, const std::string &whitelist)
-: m_logWatcher(logFilename, InotifyWrapper::Modified)
-, m_logFilename(logFilename)
-, m_logFileIndex(0) {
+FileMonitor::FileMonitor(const std::string &logDirectory, const std::string &whitelistFilename)
+: m_logWatcher(logDirectory, InotifyWrapper::Created | InotifyWrapper::Modified)
+, m_logFilename("")
+, m_logFileIndex(0)
+, m_whitelistWatcher(getBaseDir(whitelistFilename), InotifyWrapper::Modified)
+, m_whitelistFilename(whitelistFilename) {
     // Load whitelist
-    loadSteamIDsWhitelisted(whitelist);
+    loadSteamIDsWhitelisted();
 
     // Get the max value for the select
-    m_maxFileDescriptor = m_logWatcher.getFileDescriptor();
+    m_maxFileDescriptor = std::max({ m_logWatcher.getFileDescriptor(), m_whitelistWatcher.getFileDescriptor() });
 }
 
 void FileMonitor::kickUnknowSteamIDs() {
-    // Get the new intofy events
-    auto events = m_logWatcher.getEvents();
+    // Open the log file
+    std::ifstream logFile(m_logWatcher.getBaseDir() + m_logFilename);
 
-    for (auto event: events) {
-        if (event.mask == IN_MODIFY) {
-            // Open the log file
-            std::ifstream logFile(m_logFilename);
+    // Check if the open fail
+    if (logFile.fail()) {
+        std::cerr << "FileMonitor::kickUnknowSteamIDs(): Error open() " << strerror(errno) << std::endl;
+        std::exit(-1);
+    }
 
-            // Jump to the next unread data
-            logFile.seekg(m_logFileIndex);
+    // Jump to the next unread data
+    logFile.seekg(m_logFileIndex);
 
-            // Read line by line
-            std::string line;
-            while (!logFile.eof()) {
-                // Read char by char
-                char c = 0;
-                logFile.read(&c, sizeof(char));
-                line.push_back(c);
-                ++m_logFileIndex;
+    // Read line by line
+    std::string line;
+    while (!logFile.eof()) {
+        // Read char by char
+        char c = 0;
+        logFile.read(&c, sizeof(char));
+        line.push_back(c);
+        ++m_logFileIndex;
 
-                // When the line is finished
-                if (c == '\n') {
-                    // Remove last '\n'
-                    line.pop_back();
+        // When the line is finished
+        if (c == '\n') {
+            // Remove last '\n'
+            line.pop_back();
 
-                    // Extracts the steamID if it exits
-                    std::string steamID = getSteamID(line);
+            // Extracts the steamID if it exits
+            std::string steamID = getSteamID(line);
 
-                    // If the steamID was not whitelisted
-                    if (steamID != "" && !steamIDisWhitelisted(steamID)) {
-                        // RCon::kickSteamID(steamID);
-                        std::cout << steamID << std::endl;
-                    }
-
-                    line.clear();
-                }
+            // If the steamID was not whitelisted
+            if (steamID != "" && !isWhitelisted(steamID)) {
+                // RCon::kickSteamID(steamID);
+                std::cout << steamID << std::endl;
             }
+
+            line.clear();
         }
     }
 }
@@ -69,6 +70,7 @@ void FileMonitor::watch() {
     // Set the fd set
     FD_ZERO(&descriptors);
     FD_SET(m_logWatcher.getFileDescriptor(), &descriptors);
+    FD_SET(m_whitelistWatcher.getFileDescriptor(), &descriptors);
 
     returnValue = select(m_maxFileDescriptor + 1, &descriptors, NULL, NULL, NULL);
 
@@ -76,12 +78,47 @@ void FileMonitor::watch() {
         perror("FileMonitor::watch(): Error select()");
         std::exit(-1);
     }
-    else if (FD_ISSET(m_logWatcher.getFileDescriptor(), &descriptors)) {
-        kickUnknowSteamIDs();
+
+    if (FD_ISSET(m_logWatcher.getFileDescriptor(), &descriptors)) {
+        auto events = m_logWatcher.getEvents();
+
+        // Check type of event
+        for (auto event: events) {
+            // If a file is modified
+            if (event.mask & InotifyWrapper::Modified) {
+                // If the log filename is unset
+                if (m_logFilename == "") {
+                    m_logFilename = event.name;
+                    m_logFileIndex = 0;
+                }
+
+                // Check if the modified file is the current log file
+                if(m_logFilename == event.name) {
+                    kickUnknowSteamIDs();
+                }
+            }
+            // If a file was created, we set the new log filename
+            else if (event.mask & InotifyWrapper::Created) {
+                m_logFilename = event.name;
+                m_logFileIndex = 0;
+            }
+        }
+    }
+
+    if (FD_ISSET(m_whitelistWatcher.getFileDescriptor(), &descriptors)) {
+        // Get the new intofy events
+        auto events = m_whitelistWatcher.getEvents();
+
+        // Check if the file was updated
+        for (auto event: events) {
+            if (event.mask & InotifyWrapper::Modified) {
+                loadSteamIDsWhitelisted();
+            }
+        }
     }
 }
 
-std::string FileMonitor::getSteamID(const std::string &line) {
+std::string FileMonitor::getSteamID(const std::string &line) const {
     // Check if a new player connect
     std::regex steamIDRegex(".+\\[[0-9]+/([0-9]+)\\].+");
     std::smatch steamIDMatch;
@@ -105,18 +142,19 @@ std::string FileMonitor::getSteamID(const std::string &line) {
     return steamID;
 }
 
-bool FileMonitor::steamIDisWhitelisted(const std::string &steamID) const {
+bool FileMonitor::isWhitelisted(const std::string &steamID) const {
     return std::find(m_whitelist.begin(), m_whitelist.end(), steamID) != m_whitelist.end();
 }
 
-void FileMonitor::loadSteamIDsWhitelisted(const std::string &filename) {
-    std::cout << "FileMonitor::loadSteamIDsWhitelisted()" << std::endl;
-
+void FileMonitor::loadSteamIDsWhitelisted() {
     // Try to open the whitelist file
-    std::ifstream file(filename);
+    std::ifstream file(m_whitelistFilename);
     if (file.fail()) {
         return;
     }
+
+    // Clear all previous steamID
+    m_whitelist.clear();
 
     // Read line by line the whitelisted steamID
     while (!file.eof()) {
@@ -132,10 +170,21 @@ void FileMonitor::loadSteamIDsWhitelisted(const std::string &filename) {
     // Remove duplicate steamID
     std::sort(m_whitelist.begin(), m_whitelist.end());
     m_whitelist.erase(std::unique(m_whitelist.begin(), m_whitelist.end()), m_whitelist.end());
+}
 
-    for (std::string steamID: m_whitelist) {
-        std::cout << steamID << std::endl;
+std::string FileMonitor::getBaseDir(const std::string &filename) const {
+    std::string directory = "";
+
+    // Get the base dir
+    const size_t lastSlashIndex = filename.rfind('/');
+    if (std::string::npos != lastSlashIndex) {
+        directory = filename.substr(0, lastSlashIndex);
     }
 
-    std::cout << "m_whitelist.size() = " << m_whitelist.size() << std::endl;
+    // If the file is in current dir
+    if (directory == "") {
+        directory = "./";
+    }
+
+    return directory;
 }

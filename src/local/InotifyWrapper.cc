@@ -1,5 +1,7 @@
 #include "InotifyWrapper.h"
 
+#include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static constexpr std::size_t EVENT_SIZE  = sizeof(InotifyEvent);
@@ -29,6 +31,10 @@ InotifyWrapper::~InotifyWrapper() {
     close(m_inotifyFileDescriptor);
 }
 
+std::string InotifyWrapper::getBaseDir() const {
+    return m_filename;
+}
+
 std::vector<InotifyEvent> InotifyWrapper::getEvents() const {
     char buffer[BUF_LEN] = {0};
     std::vector<InotifyEvent> events;
@@ -43,9 +49,15 @@ std::vector<InotifyEvent> InotifyWrapper::getEvents() const {
     // Parse the inotify events
     int i = 0;
     while (i < length) {
-        InotifyEvent *event = reinterpret_cast<InotifyEvent*>(&buffer[i]);
+        struct inotify_event *event = reinterpret_cast<struct inotify_event*>(&buffer[i]);
 
-        events.push_back(*event);
+        // Create a wrapper
+        InotifyEvent eventWrapper;
+        eventWrapper.wd = event->wd;
+        eventWrapper.mask = event->mask;
+        eventWrapper.name = std::string(event->name);
+
+        events.push_back(eventWrapper);
 
         i += EVENT_SIZE + event->len;
     }

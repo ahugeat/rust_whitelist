@@ -2,7 +2,7 @@
 
 int main() {
     // Monitoring the log file
-    FileMonitor logMonitor("test.log", "whitelist.txt");
+    FileMonitor logMonitor("log/", "whitelist.txt");
 
     for (;;) {
         logMonitor.watch();
