@@ -54,8 +54,8 @@ void FileMonitor::kickUnknowSteamIDs() {
 
             // If the steamID was not whitelisted
             if (steamID != "" && !isWhitelisted(steamID)) {
-                // RCon::kickSteamID(steamID);
-                std::cout << steamID << std::endl;
+                RCon::kickSteamID(steamID);
+                std::cout << "The player: '" << steamID << "' has been kicked" << std::endl;
             }
 
             line.clear();
