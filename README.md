@@ -14,7 +14,7 @@ Installation
 ============
 
 ```sh
-git clone ...
+git clone https://github.com/ahugeat/rust_whitelist.git
 cd rust_whitelist
 mkdir build
 cd build
