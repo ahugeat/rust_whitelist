@@ -8,7 +8,7 @@
 
 class FileMonitor {
 public:
-    FileMonitor(const std::string &logDirectory, const std::string &whitelistFilename);
+    FileMonitor(const std::string &logDirectory, const std::string &whitelistFilename, const std::string &hostname, const std::string &port, const std::string &password);
 
     void kickUnknowSteamIDs();
     void watch();
@@ -27,6 +27,9 @@ private:
     InotifyWrapper m_whitelistWatcher;
     std::string m_whitelistFilename;
     int m_maxFileDescriptor;
+    const std::string &m_hostname;
+    const std::string &m_port;
+    const std::string &m_password;
 };
 
 #endif // _FILE_MONITOR_H

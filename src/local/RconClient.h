@@ -31,7 +31,7 @@ struct RconPacket {
 
 class RconClient {
 public:
-    RconClient(char *hostname, char *port);
+    RconClient(const char *hostname, const char *port);
 
     RconClient(const RconClient&) = delete;
     RconClient& operator=(const RconClient&) = delete;

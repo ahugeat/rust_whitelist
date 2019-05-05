@@ -21,6 +21,7 @@ InotifyWrapper::InotifyWrapper(const std::string &filename, EventType watchType)
     // Add watch
     m_watcherDescriptor = inotify_add_watch(m_inotifyFileDescriptor, m_filename.c_str(), watchType);
     if (m_watcherDescriptor < 0) {
+	printf("%s\n", filename.c_str());
         perror("InotifyWrapper::InotifyWrapper(): Error inotify_add_watch()");
         std::exit(-1);
     }

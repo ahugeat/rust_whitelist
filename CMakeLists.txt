@@ -22,7 +22,7 @@ add_executable(rust_whitelist
     src/rust-whitelist.cc
     src/local/FileMonitor.cc
     src/local/InotifyWrapper.cc
-    src/local/RCon.cc
+    src/local/Rcon.cc
     src/local/RconClient.cc
 )
 

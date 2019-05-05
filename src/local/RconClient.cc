@@ -41,7 +41,7 @@ void RconPacket::clear() {
     std::memset(body, 0, MaxBodySize);
 }
 
-RconClient::RconClient(char *hostname, char *port)
+RconClient::RconClient(const char *hostname, const char *port)
 : m_socket(m_ioService) {
     tcp::resolver resolver(m_ioService);
     boost::asio::connect(m_socket, resolver.resolve({ hostname, port }));

@@ -7,14 +7,17 @@
 #include <limits>
 #include <regex>
 
-#include "RCon.h"
+#include "Rcon.h"
 
-FileMonitor::FileMonitor(const std::string &logDirectory, const std::string &whitelistFilename)
+FileMonitor::FileMonitor(const std::string &logDirectory, const std::string &whitelistFilename, const std::string &hostname, const std::string &port, const std::string &password)
 : m_logWatcher(logDirectory, InotifyWrapper::Created | InotifyWrapper::Modified)
 , m_logFilename("")
 , m_logFileIndex(0)
 , m_whitelistWatcher(getBaseDir(whitelistFilename), InotifyWrapper::Modified)
-, m_whitelistFilename(whitelistFilename) {
+, m_whitelistFilename(whitelistFilename)
+, m_hostname(hostname)
+, m_port(port)
+, m_password(password) {
     // Load whitelist
     loadSteamIDsWhitelisted();
 
@@ -54,7 +57,7 @@ void FileMonitor::kickUnknowSteamIDs() {
 
             // If the steamID was not whitelisted
             if (steamID != "" && !isWhitelisted(steamID)) {
-                RCon::kickSteamID(steamID);
+                RCon::kickSteamID(steamID, m_hostname, m_port, m_password);
                 std::cout << "The player: '" << steamID << "' has been kicked" << std::endl;
             }
 
