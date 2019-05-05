@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
 
     RconClient client(argv[1], argv[2]);
     client.authenticate(password);
+    client.sendCommand("save");
 
     return 0;
 }

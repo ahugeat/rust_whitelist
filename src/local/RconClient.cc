@@ -1,8 +1,12 @@
 #include "RconClient.h"
 
 #include <cassert>
+#include <chrono>
 #include <cstring>
 #include <iostream>
+#include <thread>
+
+using namespace std::chrono_literals;
 
 using boost::asio::ip::tcp;
 
@@ -63,6 +67,32 @@ bool RconClient::authenticate(const std::string &password) {
     // std::cout << "ID: " << packet.id << std::endl;
     // std::cout << "Type: " << static_cast<int32_t>(packet.type) << std::endl;
     // std::cout << "body: " << packet.body << std::endl;
+    std::this_thread::sleep_for(1s);
+
+    return true;
+}
+
+bool RconClient::sendCommand(const std::string &command) {
+    RconPacket packet;
+    packet.id = 0;
+    packet.type = PacketType::ServerdataExecommand;
+    packet.writeBody(command);
+
+    // Send the password
+    bool sendOK = sendPacket(packet);
+    assert(sendOK);
+
+    // BUG: No response receive but command executed
+    // // Reveive the server response
+    // packet.clear();
+    // bool receiveOK = receivePacket(packet);
+    // assert(receiveOK);
+    //
+    // std::cout << "Size: " << packet.size << std::endl;
+    // std::cout << "ID: " << packet.id << std::endl;
+    // std::cout << "Type: " << static_cast<int32_t>(packet.type) << std::endl;
+    // std::cout << "body: " << packet.body << std::endl;
+    std::this_thread::sleep_for(1s);
 
     return true;
 }

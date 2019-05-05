@@ -40,6 +40,7 @@ public:
     RconClient& operator=(RconClient&& other) = delete;
 
     bool authenticate(const std::string &password);
+    bool sendCommand(const std::string &command);
 
 private:
     bool sendPacket(const RconPacket &packet);
